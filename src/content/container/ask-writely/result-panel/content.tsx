@@ -19,10 +19,14 @@ import { getToken } from '@/common/api/writely'
 import { LoginInstruction } from './login-instruction'
 import { useSettings } from '@/common/store/settings'
 import { ServiceProvider } from '@/options/types'
+import { chatgptWeb } from '@/common/api/chatgpt-web'
 
 const md = mdit().use(hljsPlugin)
 
-export const Content: React.FC<{ text: string }> = ({ text: task }) => {
+export const Content: React.FC<{
+  text: string
+  abortRef: MutableRefObject<() => void>
+}> = ({ text: task, abortRef }) => {
   const mdContainerRef = useRef<HTMLDivElement>()
   const selectionManager = useSelectionManager()
   const queryOpenAIPrompt = useOpenAIEditPrompt()
@@ -39,7 +43,6 @@ export const Content: React.FC<{ text: string }> = ({ text: task }) => {
   const { settings } = useSettings()
   const sequenceRef = useRef<number>(0)
   const { isOriginText } = useResultPanel()
-  const abortRef = useRef<() => void>(null)
 
   const handleQuery = useCallback(async () => {
     if (!selectionManager.text) {
@@ -55,7 +58,7 @@ export const Content: React.FC<{ text: string }> = ({ text: task }) => {
       }
 
       if (end) {
-        setText(text)
+        text && setText(text)
         setLoading(false)
         return
       }
@@ -106,14 +109,21 @@ export const Content: React.FC<{ text: string }> = ({ text: task }) => {
   )
 
   if (!getToken() && settings.serviceProvider === ServiceProvider.Writely) {
-    return <LoginInstruction />
+    return <LoginInstruction accountType="Writely" />
+  }
+
+  if (
+    !chatgptWeb.accessToken &&
+    settings.serviceProvider === ServiceProvider.ChatGPT
+  ) {
+    return <LoginInstruction accountType="ChatGPT" />
   }
 
   return (
-    <div className="shadow-xl bg-zinc-100">
+    <div className="shadow-xl bg-zinc-100 relative">
       <div className="p-4 max-h-[50vh] overflow-auto transition-all duration-700">
         {loading ? (
-          <div className="flex justify-center text-xl">
+          <div className="flex justify-center text-xl sticky top-0">
             <StopGenerate
               onClick={() => {
                 abortRef?.current?.()
@@ -146,7 +156,7 @@ export const Content: React.FC<{ text: string }> = ({ text: task }) => {
 
 const StopGenerate: React.FC<{ onClick?: () => void }> = ({ onClick }) => {
   return (
-    <div className="w-fit">
+    <div className="w-fit rounded-3xl bg-slate-100">
       <Tooltip title={i18next.t('##Stop Generate')} trigger="hover">
         <IconBtn
           color="red"

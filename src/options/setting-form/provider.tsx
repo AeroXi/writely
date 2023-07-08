@@ -9,6 +9,7 @@ import { useUser } from '@/common/api/writely'
 import Link from 'antd/es/typography/Link'
 import { MaterialSymbolsCheckCircleRounded } from '@/components/icon/checked'
 import { ChatGPTIcon } from '@/components/icon/chatgpt'
+import { useChatGPTWebInfo } from '@/common/api/chatgpt-web'
 
 export const ProviderSetting: React.FC = () => {
   const value = Form.useWatch('serviceProvider')
@@ -67,15 +68,17 @@ export const ProviderSetting: React.FC = () => {
                 </div>
               </Tooltip>
             </Radio>
-            {/* <Radio value={ServiceProvider.ChatGPT}>
+            <Radio value={ServiceProvider.ChatGPT}>
               <Tooltip
                 title={i18next.t(
-                  'By using the services provided by ChatGPT, you can permanently use Writely software for free'
+                  'Using the ChatGPT Web service is not recommended as it may carry the risk of being banned by OpenAI. Please consider this carefully. In case of account suspension, it is unrelated to Writely.'
                 )}
               >
                 <div
                   style={{
-                    boxShadow: isCheckedChatGPT ? '0px 3px rgb(252,211,77)' : '',
+                    boxShadow: isCheckedChatGPT
+                      ? '0px 3px rgb(252,211,77)'
+                      : '',
                   }}
                   className={classNames(
                     'items-center py-3 px-5 rounded-full flex gap-2',
@@ -86,11 +89,12 @@ export const ProviderSetting: React.FC = () => {
                   <span className="font-semibold text-3xl">ChatGPT</span>
                 </div>
               </Tooltip>
-            </Radio> */}
+            </Radio>
           </Radio.Group>
         </div>
       </Form.Item>
       {isCheckedWritely ? <LinkToWritelySite /> : null}
+      {isCheckedChatGPT ? <LinkToChatgptWeb /> : null}
     </Card>
   )
 }
@@ -122,6 +126,48 @@ const LinkToWritelySite: React.FC = () => {
           <a
             target="_blank"
             href="https://writely.miao-ya.com"
+            className="text-blue-500 text-3xl"
+          >
+            <MaterialSymbolsAddLink />
+          </a>
+        </>
+      )}
+    </div>
+  )
+}
+
+const LinkToChatgptWeb: React.FC = () => {
+  const { isLoading, error, data } = useChatGPTWebInfo()
+
+  if (error) {
+    return <span>error</span>
+  }
+
+  const name = data?.user?.name || data?.user?.email
+
+  return (
+    <div className="flex py-4 border-border border-t text-xl gap-3 items-center justify-center">
+      {isLoading ? (
+        <Spin spinning />
+      ) : name ? (
+        <div className="flex gap-1 items-center">
+          <Link
+            target="_blank"
+            href="https://chat.openai.com/"
+            className="text-lg"
+          >
+            {name}
+          </Link>
+          <span className="text-green-500">
+            <MaterialSymbolsCheckCircleRounded />
+          </span>
+        </div>
+      ) : (
+        <>
+          <span>{i18next.t('Connect your Chatgpt account')}</span>
+          <a
+            target="_blank"
+            href="https://chat.openai.com/"
             className="text-blue-500 text-3xl"
           >
             <MaterialSymbolsAddLink />
